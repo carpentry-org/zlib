@@ -1,0 +1,50 @@
+(relative-include "zlib_helper.h")
+(add-cflag "-lz")
+
+; i tried doing this in carp, but it’s a bit of a pain to wrap the API
+; idiomatically, so for now you’ll only get regular inflation and deflation
+(defmodule ZLib
+  (register-type ZBytes [
+    len Int
+    bytes String
+  ])
+
+  (register-type ZRes)
+  (defmodule ZRes
+    (register ok? (Fn [&ZRes] Bool) "ZRes_is_ok")
+    (register bytes (Fn [ZRes] ZBytes) "ZRes_bytes")
+    (register str (Fn [ZRes] String) "ZRes_str")
+    (register err (Fn [ZRes] String) "ZRes_err")
+  )
+
+  (deftype ZLevel
+    (NoCompression [])
+    (BestSpeed [])
+    (BestCompression [])
+    (DefaultCompression [])
+  )
+
+  (defmodule ZLevel
+    (defn to-int [l]
+      (match l
+        (NoCompression) 0
+        (BestSpeed) 1
+        (BestCompression) 9
+        (DefaultCompression) -1)))
+
+  (register inflate- (Fn [ZBytes] ZRes) "ZLib_inflate_c")
+  (defn inflate [s]
+    (let [r (inflate- s)]
+      (if (ZRes.ok? &r)
+        (Result.Success (ZRes.str r))
+        (Result.Error (ZRes.err r)))))
+
+  (register deflate- (Fn [String Int] ZRes) "ZLib_deflate_c")
+  (defn deflate-with [s level]
+    (let [r (deflate- s (ZLevel.to-int level))]
+      (if (ZRes.ok? &r)
+        (Result.Success (ZRes.bytes r))
+        (Result.Error (ZRes.err r)))))
+
+  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression)))
+)

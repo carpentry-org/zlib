@@ -1,0 +1,26 @@
+(load "Test.carp")
+
+(load "zlib.carp")
+
+(use-all ZLib Test)
+
+(deftest test
+  (assert-true test
+                (Result.success? &(deflate @"hi"))
+                "deflation returns success"
+  )
+  (assert-true test
+                (Result.success? &(inflate (Result.unsafe-from-success (deflate @"hi"))))
+                "deflation->inflation returns success"
+  )
+  (assert-equal test
+                &(Result.Error @"Data Error")
+                &(inflate (ZBytes.init 3 @"hi"))
+                "inflating random data returns data error"
+  )
+  (assert-equal test
+                &(Result.Success @"hi")
+                &(inflate (Result.unsafe-from-success (deflate @"hi")))
+                "deflation->inflation works"
+  )
+)
