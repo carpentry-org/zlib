@@ -1,0 +1,172 @@
+<!DOCTYPE HTML>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="logo">
+                <a href="http://github.com/carp-lang/Carp">
+                    <img src="logo.png">
+                </a>
+                <div class="title">
+                    zlib
+                </div>
+                <div class="index">
+                    <ul>
+                        <li>
+                            <a href="ZLib.html">
+                                ZLib
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <h1>
+                ZLib
+            </h1>
+            <div class="module-description">
+                <p>is a high-level wrapper around <a href="https://zlib.net/">zlib</a>.</p>
+<h2>Installation</h2>
+<pre><code class="language-clojure">(load &quot;https://veitheller.de/git/carpentry/zlib.git@0.0.1&quot;)
+</code></pre>
+<h2>Usage</h2>
+<p>The <code>ZLib</code> module provides only two functions, <a href="#inflate"><code>inflate</code></a> and
+<a href="#deflate"><code>deflate</code></a>. These functions work in tandem to provide you with data
+compression.</p>
+<pre><code class="language-clojure">; deflate returns a Result of either binary data or an error message
+(let [deflated (ZLib.deflate &quot;mystring&quot;)]
+  (match deflated
+    ; inflate returns a Result of either a string or an error message
+    (Success bin) (println* &amp;(inflate bin))
+    (Error msg) (IO.errorln &amp;msg)))
+</code></pre>
+<p>Because it’s a <code>Result</code> type, we can apply combinators to it.</p>
+<pre><code class="language-clojure">(=&gt; (ZLib.deflate &quot;mystring&quot;)
+    (Result.and-then &amp;ZLib.inflate)
+    (Result.map-error &amp;(fn [msg] (do (println* &amp;msg) msg)))
+)
+</code></pre>
+<p>You can also choose different levels of compression using <code>inflate-with</code>. The
+levels are defined in <a href="#ZLevel"><code>ZLib.ZLevel</code></a>, and are <code>NoCompression</code>,
+<code>BestSpeed</code>, <code>BestCompression</code>, and <code>DefaultCompression</code>, which is, well, the
+default.</p>
+
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#ZBytes">
+                    <h3 id="ZBytes">
+                        ZBytes
+                    </h3>
+                </a>
+                <div class="description">
+                    module
+                </div>
+                <p class="sig">
+                    Module
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#ZLevel">
+                    <h3 id="ZLevel">
+                        ZLevel
+                    </h3>
+                </a>
+                <div class="description">
+                    module
+                </div>
+                <p class="sig">
+                    Module
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>is a type used in conjunction with
+<a href="#deflate-with"><code>deflate-with</code></a>. It controls the compression level.</p>
+<p>The constructors are <code>NoCompression</code>, <code>BestSpeed</code>, <code>BestCompression</code>, and
+<code>DefaultCompression</code>, which is, well, the default.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#deflate">
+                    <h3 id="deflate">
+                        deflate
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (λ [&amp;String] (Result ZBytes String))
+                </p>
+                <pre class="args">
+                    (deflate s)
+                </pre>
+                <p class="doc">
+                    <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+<p>It is equivalent to calling <a href="#deflate-with"><code>deflate-with</code></a> with
+<code>(ZLevel.DefaultCompression)</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#deflate-with">
+                    <h3 id="deflate-with">
+                        deflate-with
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (λ [&amp;String, ZLevel] (Result ZBytes String))
+                </p>
+                <pre class="args">
+                    (deflate-with s level)
+                </pre>
+                <p class="doc">
+                    <p>takes a bytes object <code>s</code>, a <code>Zlevel</code> <code>level</code> and returns
+a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#inflate">
+                    <h3 id="inflate">
+                        inflate
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (λ [ZBytes] (Result String String))
+                </p>
+                <pre class="args">
+                    (inflate s)
+                </pre>
+                <p class="doc">
+                    <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the inflated string if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

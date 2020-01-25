@@ -134,7 +134,7 @@ err:
   return res;
 }
 
-ZRes ZLib_deflate_c(char* s, int level) {
+ZRes ZLib_deflate_c(String* s, int level) {
   int ret, flush;
   unsigned have;
   z_stream strm;
@@ -142,7 +142,7 @@ ZRes ZLib_deflate_c(char* s, int level) {
   unsigned char in[CHUNK];
   unsigned char out[CHUNK];
   int offs = 0;
-  int len = strlen(s);
+  int len = strlen(*s);
   ZBytes* bytes = malloc(sizeof(ZBytes));
   bytes->bytes = NULL;
   bytes->len = 0;
@@ -158,7 +158,7 @@ ZRes ZLib_deflate_c(char* s, int level) {
   do {
     strm.avail_in = min(CHUNK, len-offs);
     if (strm.avail_in <= 0) break;
-    memcpy(in, s+offs, strm.avail_in);
+    memcpy(in, (*s)+offs, strm.avail_in);
     offs += strm.avail_in;
     flush = offs >= len-1 ? Z_FINISH : Z_NO_FLUSH;
     strm.next_in = in;

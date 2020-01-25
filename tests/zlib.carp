@@ -6,11 +6,11 @@
 
 (deftest test
   (assert-true test
-                (Result.success? &(deflate @"hi"))
+                (Result.success? &(deflate "hi"))
                 "deflation returns success"
   )
   (assert-true test
-                (Result.success? &(inflate (Result.unsafe-from-success (deflate @"hi"))))
+                (Result.success? &(inflate (Result.unsafe-from-success (deflate "hi"))))
                 "deflation->inflation returns success"
   )
   (assert-equal test
@@ -20,7 +20,7 @@
   )
   (assert-equal test
                 &(Result.Success @"hi")
-                &(inflate (Result.unsafe-from-success (deflate @"hi")))
+                &(inflate (Result.unsafe-from-success (deflate "hi")))
                 "deflation->inflation works"
   )
 )
