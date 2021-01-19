@@ -41,14 +41,13 @@ default.")
 ; i tried doing this in carp, but it’s a bit of a pain to wrap the API
 ; idiomatically, so for now you’ll only get regular inflation and deflation
 (defmodule ZLib
-  (doc ZBytes "is an opaque bytes type with an associated length.")
   (register-type ZBytes [
     len Int
     bytes String
   ])
+  (private ZBytes)
+  (hidden ZBytes)
 
-  (private ZRes)
-  (hidden ZRes)
   (register-type ZRes)
   (defmodule ZRes
     (register ok? (Fn [&ZRes] Bool) "ZRes_is_ok")
@@ -56,12 +55,9 @@ default.")
     (register str (Fn [ZRes] String) "ZRes_str")
     (register err (Fn [ZRes] String) "ZRes_err")
   )
+  (private ZRes)
+  (hidden ZRes)
 
-  (doc ZLevel "is a type used in conjunction with
-[`deflate-with`](#deflate-with). It controls the compression level.
-
-The constructors are `NoCompression`, `BestSpeed`, `BestCompression`, and
-`DefaultCompression`, which is, well, the default.")
   (deftype ZLevel
     (NoCompression [])
     (BestSpeed [])
@@ -76,6 +72,11 @@ The constructors are `NoCompression`, `BestSpeed`, `BestCompression`, and
         (BestSpeed) 1
         (BestCompression) 9
         (DefaultCompression) -1)))
+  (doc ZLevel "is a type used in conjunction with
+[`deflate-with`](#deflate-with). It controls the compression level.
+
+The constructors are `NoCompression`, `BestSpeed`, `BestCompression`, and
+`DefaultCompression`, which is, well, the default.")
 
   (private inflate-)
   (hidden inflate-)

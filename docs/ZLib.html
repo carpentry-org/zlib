@@ -4,13 +4,13 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="../style.css">
     </head>
     <body>
         <div class="content">
             <div class="logo">
-                <a href="http://github.com/carp-lang/Carp">
-                    <img src="logo.png">
+                <a href="">
+                    <img src="">
                 </a>
                 <div class="title">
                     zlib
@@ -57,25 +57,6 @@ default.</p>
 
             </div>
             <div class="binder">
-                <a class="anchor" href="#ZBytes">
-                    <h3 id="ZBytes">
-                        ZBytes
-                    </h3>
-                </a>
-                <div class="description">
-                    module
-                </div>
-                <p class="sig">
-                    Module
-                </p>
-                <span>
-                    
-                </span>
-                <p class="doc">
-                    
-                </p>
-            </div>
-            <div class="binder">
                 <a class="anchor" href="#ZLevel">
                     <h3 id="ZLevel">
                         ZLevel
@@ -108,7 +89,7 @@ default.</p>
                     defn
                 </div>
                 <p class="sig">
-                    (λ [&amp;String] (Result ZBytes String))
+                    (Fn [(Ref String a)] (Result ZBytes String))
                 </p>
                 <pre class="args">
                     (deflate s)
@@ -132,7 +113,7 @@ well, and an <code>Error</code> returning an error message otherwise.</p>
                     defn
                 </div>
                 <p class="sig">
-                    (λ [&amp;String, ZLevel] (Result ZBytes String))
+                    (Fn [(Ref String a), ZLib.ZLevel] (Result ZBytes String))
                 </p>
                 <pre class="args">
                     (deflate-with s level)
@@ -155,7 +136,7 @@ well, and an <code>Error</code> returning an error message otherwise.</p>
                     defn
                 </div>
                 <p class="sig">
-                    (λ [ZBytes] (Result String String))
+                    (Fn [ZBytes] (Result String String))
                 </p>
                 <pre class="args">
                     (inflate s)
