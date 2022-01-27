@@ -5,7 +5,7 @@ is a high-level wrapper around [zlib](https://zlib.net/).
 ## Installation
 
 ```clojure
-(load "https://veitheller.de/git/carpentry/zlib.git@0.0.1")
+(load "git@git.veitheller.de:carpentry/zlib.git@0.0.2")
 ```
 
 ## Usage

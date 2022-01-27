@@ -5,13 +5,13 @@
 typedef struct {
   int len;
   char* bytes;
-} ZBytes;
+} ZLibZBytes;
 
 typedef struct {
   int which;
   union {
     int err;
-    ZBytes* out;
+    ZLibZBytes* out;
   };
 } ZRes;
 #define ZRES_OK 0
@@ -21,7 +21,7 @@ bool ZRes_is_ok(ZRes* r) {
   return r->which == ZRES_OK;
 }
 
-ZBytes ZRes_bytes(ZRes r) {
+ZLibZBytes ZRes_bytes(ZRes r) {
   assert(r.which == ZRES_OK);
   return *r.out;
 }
@@ -63,7 +63,7 @@ char* ZRes_err(ZRes r) {
      __typeof__ (b) _b = (b); \
    _a < _b ? _a : _b; })
 
-ZRes ZLib_inflate_c(ZBytes b) {
+ZRes ZLib_inflate_c(ZLibZBytes b) {
   int ret;
   ZRes res;
   unsigned have;
@@ -73,7 +73,7 @@ ZRes ZLib_inflate_c(ZBytes b) {
   int offs = 0;
   int len = b.len;
   char* source = b.bytes;
-  ZBytes* bytes = malloc(sizeof(ZBytes));
+  ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
   bytes->bytes = NULL;
   bytes->len = 0;
 
@@ -143,7 +143,7 @@ ZRes ZLib_deflate_c(String* s, int level) {
   unsigned char out[CHUNK];
   int offs = 0;
   int len = strlen(*s);
-  ZBytes* bytes = malloc(sizeof(ZBytes));
+  ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
   bytes->bytes = NULL;
   bytes->len = 0;
 

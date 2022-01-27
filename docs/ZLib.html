@@ -18,20 +18,32 @@
                 <div class="index">
                     <ul>
                         <li>
-                            <a href="ZLib.html">
-                                ZLib
-                            </a>
+                            <details>
+                                <summary>
+                                    <a href="ZLib.html">
+                                        ZLib
+                                    </a>
+                                </summary>
+                                <ul>
+                                    <li>
+                                        <a href="ZLib.ZLevel.html">
+                                            ZLevel
+                                        </a>
+                                    </li>
+                                </ul>
+                            </details>
                         </li>
                     </ul>
                 </div>
             </div>
-            <h1>
-                ZLib
-            </h1>
-            <div class="module-description">
-                <p>is a high-level wrapper around <a href="https://zlib.net/">zlib</a>.</p>
+            <div class="module">
+                <h1>
+                    ZLib
+                </h1>
+                <div class="module-description">
+                    <p>is a high-level wrapper around <a href="https://zlib.net/">zlib</a>.</p>
 <h2>Installation</h2>
-<pre><code class="language-clojure">(load &quot;https://veitheller.de/git/carpentry/zlib.git@0.0.1&quot;)
+<pre><code class="language-clojure">(load &quot;git@git.veitheller.de:carpentry/zlib.git@0.0.2&quot;)
 </code></pre>
 <h2>Usage</h2>
 <p>The <code>ZLib</code> module provides only two functions, <a href="#inflate"><code>inflate</code></a> and
@@ -55,98 +67,101 @@ levels are defined in <a href="#ZLevel"><code>ZLib.ZLevel</code></a>, and are <c
 <code>BestSpeed</code>, <code>BestCompression</code>, and <code>DefaultCompression</code>, which is, well, the
 default.</p>
 
-            </div>
-            <div class="binder">
-                <a class="anchor" href="#ZLevel">
-                    <h3 id="ZLevel">
-                        ZLevel
-                    </h3>
-                </a>
-                <div class="description">
-                    module
                 </div>
-                <p class="sig">
-                    Module
-                </p>
-                <span>
-                    
-                </span>
-                <p class="doc">
-                    <p>is a type used in conjunction with
+                <div class="binder">
+                    <a class="anchor" href="#ZLevel">
+                        <h3 id="ZLevel">
+                            <a href="ZLib.ZLevel.html">
+                                ZLevel
+                            </a>
+                        </h3>
+                    </a>
+                    <div class="description">
+                        module
+                    </div>
+                    <p class="sig">
+                        Module
+                    </p>
+                    <span>
+                        
+                    </span>
+                    <p class="doc">
+                        <p>is a type used in conjunction with
 <a href="#deflate-with"><code>deflate-with</code></a>. It controls the compression level.</p>
 <p>The constructors are <code>NoCompression</code>, <code>BestSpeed</code>, <code>BestCompression</code>, and
 <code>DefaultCompression</code>, which is, well, the default.</p>
 
-                </p>
-            </div>
-            <div class="binder">
-                <a class="anchor" href="#deflate">
-                    <h3 id="deflate">
-                        deflate
-                    </h3>
-                </a>
-                <div class="description">
-                    defn
+                    </p>
                 </div>
-                <p class="sig">
-                    (Fn [(Ref String a)] (Result ZBytes String))
-                </p>
-                <pre class="args">
-                    (deflate s)
-                </pre>
-                <p class="doc">
-                    <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+                <div class="binder">
+                    <a class="anchor" href="#deflate">
+                        <h3 id="deflate">
+                            deflate
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref String a)] (Result ZLib.ZBytes String))
+                    </p>
+                    <pre class="args">
+                        (deflate s)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
 <p>It is equivalent to calling <a href="#deflate-with"><code>deflate-with</code></a> with
 <code>(ZLevel.DefaultCompression)</code>.</p>
 
-                </p>
-            </div>
-            <div class="binder">
-                <a class="anchor" href="#deflate-with">
-                    <h3 id="deflate-with">
-                        deflate-with
-                    </h3>
-                </a>
-                <div class="description">
-                    defn
+                    </p>
                 </div>
-                <p class="sig">
-                    (Fn [(Ref String a), ZLib.ZLevel] (Result ZBytes String))
-                </p>
-                <pre class="args">
-                    (deflate-with s level)
-                </pre>
-                <p class="doc">
-                    <p>takes a bytes object <code>s</code>, a <code>Zlevel</code> <code>level</code> and returns
+                <div class="binder">
+                    <a class="anchor" href="#deflate-with">
+                        <h3 id="deflate-with">
+                            deflate-with
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref String a), ZLib.ZLevel] (Result ZLib.ZBytes String))
+                    </p>
+                    <pre class="args">
+                        (deflate-with s level)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a bytes object <code>s</code>, a <code>Zlevel</code> <code>level</code> and returns
 a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
 
-                </p>
-            </div>
-            <div class="binder">
-                <a class="anchor" href="#inflate">
-                    <h3 id="inflate">
-                        inflate
-                    </h3>
-                </a>
-                <div class="description">
-                    defn
+                    </p>
                 </div>
-                <p class="sig">
-                    (Fn [ZBytes] (Result String String))
-                </p>
-                <pre class="args">
-                    (inflate s)
-                </pre>
-                <p class="doc">
-                    <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+                <div class="binder">
+                    <a class="anchor" href="#inflate">
+                        <h3 id="inflate">
+                            inflate
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [ZLib.ZBytes] (Result String String))
+                    </p>
+                    <pre class="args">
+                        (inflate s)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the inflated string if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
 
-                </p>
+                    </p>
+                </div>
             </div>
         </div>
     </body>

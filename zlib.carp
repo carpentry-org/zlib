@@ -7,7 +7,7 @@
 ## Installation
 
 ```clojure
-(load \"https://veitheller.de/git/carpentry/zlib.git@0.0.1\")
+(load \"git@git.veitheller.de:carpentry/zlib.git@0.0.2\")
 ```
 
 ## Usage
@@ -45,17 +45,15 @@ default.")
     len Int
     bytes String
   ])
-  (private ZBytes)
   (hidden ZBytes)
 
   (register-type ZRes)
   (defmodule ZRes
     (register ok? (Fn [&ZRes] Bool) "ZRes_is_ok")
-    (register bytes (Fn [ZRes] ZBytes) "ZRes_bytes")
+    (register bytes (Fn [ZRes] ZLib.ZBytes) "ZRes_bytes")
     (register str (Fn [ZRes] String) "ZRes_str")
     (register err (Fn [ZRes] String) "ZRes_err")
   )
-  (private ZRes)
   (hidden ZRes)
 
   (deftype ZLevel
@@ -80,7 +78,7 @@ The constructors are `NoCompression`, `BestSpeed`, `BestCompression`, and
 
   (private inflate-)
   (hidden inflate-)
-  (register inflate- (Fn [ZBytes] ZRes) "ZLib_inflate_c")
+  (register inflate- (Fn [ZLib.ZBytes] ZRes) "ZLib_inflate_c")
   (doc inflate "takes a bytes object `s` and returns a `Result`.
 
 The `Result` will be a `Success` containing the inflated string if all goes
