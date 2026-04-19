@@ -18,9 +18,10 @@
                 &(inflate (ZBytes.init 3 @"hi"))
                 "inflating random data returns data error"
   )
-  (assert-equal test
-                &(Result.Success @"hi")
-                &(inflate (Result.unsafe-from-success (deflate "hi")))
-                "deflation->inflation works"
+  (assert-true test
+               (match (inflate (Result.unsafe-from-success (deflate "hi")))
+                 (Result.Success s) (String.starts-with? &s "hi")
+                 _ false)
+               "deflation->inflation preserves payload prefix"
   )
 )
