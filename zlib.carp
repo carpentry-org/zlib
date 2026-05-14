@@ -40,7 +40,8 @@ default.")
 ; i tried doing this in carp, but it’s a bit of a pain to wrap the API
 ; idiomatically, so for now you’ll only get regular inflation and deflation
 (defmodule ZLib
-  (register-type ZBytes [len Int bytes String])
+  (register-type ZBytes [len Int
+                         bytes String])
   (hidden ZBytes)
 
   (register-type ZRes)
