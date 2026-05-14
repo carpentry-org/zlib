@@ -1,7 +1,6 @@
 (relative-include "zlib_helper.h")
 (add-cflag "-lz")
 
-
 (doc ZLib "is a high-level wrapper around [zlib](https://zlib.net/).
 
 ## Installation
@@ -41,10 +40,7 @@ default.")
 ; i tried doing this in carp, but it’s a bit of a pain to wrap the API
 ; idiomatically, so for now you’ll only get regular inflation and deflation
 (defmodule ZLib
-  (register-type ZBytes [
-    len Int
-    bytes String
-  ])
+  (register-type ZBytes [len Int bytes String])
   (hidden ZBytes)
 
   (register-type ZRes)
@@ -52,16 +48,14 @@ default.")
     (register ok? (Fn [&ZRes] Bool) "ZRes_is_ok")
     (register bytes (Fn [ZRes] ZLib.ZBytes) "ZRes_bytes")
     (register str (Fn [ZRes] String) "ZRes_str")
-    (register err (Fn [ZRes] String) "ZRes_err")
-  )
+    (register err (Fn [ZRes] String) "ZRes_err"))
   (hidden ZRes)
 
   (deftype ZLevel
     (NoCompression [])
     (BestSpeed [])
     (BestCompression [])
-    (DefaultCompression [])
-  )
+    (DefaultCompression []))
 
   (defmodule ZLevel
     (defn to-int [l]
@@ -110,5 +104,4 @@ well, and an `Error` returning an error message otherwise.
 
 It is equivalent to calling [`deflate-with`](#deflate-with) with
 `(ZLevel.DefaultCompression)`.")
-  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression)))
-)
+  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression))))

@@ -6,22 +6,17 @@
 
 (deftest test
   (assert-true test
-                (Result.success? &(deflate "hi"))
-                "deflation returns success"
-  )
+    (Result.success? &(deflate "hi"))
+    "deflation returns success")
   (assert-true test
-                (Result.success? &(inflate (Result.unsafe-from-success (deflate "hi"))))
-                "deflation->inflation returns success"
-  )
+    (Result.success? &(inflate (Result.unsafe-from-success (deflate "hi"))))
+    "deflation->inflation returns success")
   (assert-equal test
-                &(Result.Error @"Data Error")
-                &(inflate (ZBytes.init 3 @"hi"))
-                "inflating random data returns data error"
-  )
+    &(Result.Error @"Data Error")
+    &(inflate (ZBytes.init 3 @"hi"))
+    "inflating random data returns data error")
   (assert-true test
-               (match (inflate (Result.unsafe-from-success (deflate "hi")))
-                 (Result.Success s) (String.starts-with? &s "hi")
-                 _ false)
-               "deflation->inflation preserves payload prefix"
-  )
-)
+    (match (inflate (Result.unsafe-from-success (deflate "hi")))
+      (Result.Success s) (String.starts-with? &s "hi")
+      _ false)
+    "deflation->inflation preserves payload prefix"))
