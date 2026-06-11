@@ -119,6 +119,8 @@ ZRes ZLib_inflate_c(ZLibZBytes b) {
   /* clean up and return */
   (void)inflateEnd(&strm);
   if (ret == Z_STREAM_END) {
+    bytes->bytes = realloc(bytes->bytes, (bytes->len)+1);
+    bytes->bytes[bytes->len] = '\0';
     res.which = ZRES_OK;
     res.out = bytes;
     return res;
