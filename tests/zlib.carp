@@ -4,51 +4,45 @@
 
 (use-all ZLib Test)
 
+(defn from-success [r]
+  (match r (Result.Success s) s (Result.Error _) (ZBytes.init 0 @"")))
+
 (deftest test
-  ; basic deflate/inflate
   (assert-true test
     (Result.success? &(deflate "hi"))
     "deflation returns success")
   (assert-true test
-    (Result.success? &(inflate (Result.unsafe-from-success (deflate "hi"))))
+    (Result.success? &(inflate (from-success (deflate "hi"))))
     "deflation->inflation returns success")
   (assert-equal test
     &(Result.Success @"hi")
-    &(inflate (Result.unsafe-from-success (deflate "hi")))
+    &(inflate (from-success (deflate "hi")))
     "deflation->inflation round-trip is exact")
-  ; error case
   (assert-equal test
     &(Result.Error @"Data Error")
     &(inflate (ZBytes.init 3 @"hi"))
     "inflating random data returns data error")
-  ; ZLevel variants
   (assert-equal test
     &(Result.Success @"hi")
-    &(inflate
-      (Result.unsafe-from-success (deflate-with "hi" (ZLevel.NoCompression))))
+    &(inflate (from-success (deflate-with "hi" (ZLevel.NoCompression))))
     "round-trip with NoCompression")
   (assert-equal test
     &(Result.Success @"hi")
-    &(inflate
-      (Result.unsafe-from-success (deflate-with "hi" (ZLevel.BestSpeed))))
+    &(inflate (from-success (deflate-with "hi" (ZLevel.BestSpeed))))
     "round-trip with BestSpeed")
   (assert-equal test
     &(Result.Success @"hi")
-    &(inflate
-      (Result.unsafe-from-success (deflate-with "hi" (ZLevel.BestCompression))))
+    &(inflate (from-success (deflate-with "hi" (ZLevel.BestCompression))))
     "round-trip with BestCompression")
   (assert-equal test
     &(Result.Success @"hi")
-    &(inflate
-      (Result.unsafe-from-success
-        (deflate-with "hi" (ZLevel.DefaultCompression))))
+    &(inflate (from-success (deflate-with "hi" (ZLevel.DefaultCompression))))
     "round-trip with DefaultCompression")
-  ; larger input
   (assert-equal test
     &(Result.Success
       @"the quick brown fox jumps over the lazy dog, again and again and again")
     &(inflate
-      (Result.unsafe-from-success
+      (from-success
         (deflate
           "the quick brown fox jumps over the lazy dog, again and again and again")))
     "round-trip with larger input"))
