@@ -162,7 +162,7 @@ ZRes ZLib_deflate_c(String* s, int level) {
     if (strm.avail_in <= 0) break;
     memcpy(in, (*s)+offs, strm.avail_in);
     offs += strm.avail_in;
-    flush = offs >= len-1 ? Z_FINISH : Z_NO_FLUSH;
+    flush = offs >= len ? Z_FINISH : Z_NO_FLUSH;
     strm.next_in = in;
 
     /* run deflate() on input until output buffer not full, finish
