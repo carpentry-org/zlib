@@ -195,3 +195,141 @@ err:
   free(bytes);
   return res;
 }
+
+/* like ZLib_deflate_c but selects the gzip container (RFC 1952) via the
+   15+16 windowBits of deflateInit2. The input loop has no early break on empty
+   input, so a zero-length string still runs deflate once with Z_FINISH and
+   emits a valid (empty) gzip member instead of aborting on the assert below. */
+ZRes ZLib_gzip_c(String* s, int level) {
+  int ret, flush;
+  unsigned have;
+  z_stream strm;
+  ZRes res;
+  unsigned char in[CHUNK];
+  unsigned char out[CHUNK];
+  int offs = 0;
+  int len = strlen(*s);
+  ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
+  bytes->bytes = NULL;
+  bytes->len = 0;
+
+  /* allocate deflate state */
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+  ret = deflateInit2(&strm, level, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY);
+  if (ret != Z_OK) goto err;
+
+  /* compress until end of file */
+  do {
+    strm.avail_in = min(CHUNK, len-offs);
+    memcpy(in, (*s)+offs, strm.avail_in);
+    offs += strm.avail_in;
+    flush = offs >= len ? Z_FINISH : Z_NO_FLUSH;
+    strm.next_in = in;
+
+    /* run deflate() on input until output buffer not full, finish
+       compression if all of source has been read in */
+    do {
+      strm.avail_out = CHUNK;
+      strm.next_out = out;
+      ret = deflate(&strm, flush);    /* no bad return value */
+      assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+
+      have = CHUNK - strm.avail_out;
+      bytes->bytes = realloc(bytes->bytes, (bytes->len)+have);
+      memcpy((bytes->bytes)+(bytes->len), out, have);
+      bytes->len += have;
+    } while (strm.avail_out == 0);
+    assert(strm.avail_in == 0);     /* all input will be used */
+    /* done when last data in file processed */
+  } while (flush != Z_FINISH);
+  assert(ret == Z_STREAM_END);        /* stream will be complete */
+
+  /* clean up and return */
+  (void)deflateEnd(&strm);
+  res.which = ZRES_OK;
+  res.out = bytes;
+  return res;
+err:
+  res.which = ZRES_ERR;
+  res.err = ret;
+  if (bytes->bytes) free(bytes->bytes);
+  free(bytes);
+  return res;
+}
+
+/* like ZLib_inflate_c but decodes the gzip container via inflateInit2's 15+16
+   windowBits, so it reads .gz streams instead of raw zlib streams. */
+ZRes ZLib_gunzip_c(ZLibZBytes b) {
+  int ret;
+  ZRes res;
+  unsigned have;
+  z_stream strm;
+  unsigned char in[CHUNK];
+  unsigned char out[CHUNK];
+  int offs = 0;
+  int len = b.len;
+  char* source = b.bytes;
+  ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
+  bytes->bytes = NULL;
+  bytes->len = 0;
+
+  /* allocate inflate state */
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+  strm.avail_in = 0;
+  strm.next_in = Z_NULL;
+  ret = inflateInit2(&strm, 15 + 16);
+  if (ret != Z_OK) goto err;
+
+  /* decompress until deflate stream ends or end of file */
+  do {
+    strm.avail_in = min(CHUNK, len-offs);
+    if (strm.avail_in <= 0) break;
+    memcpy(in, source+offs, strm.avail_in);
+    offs += strm.avail_in;
+    strm.next_in = in;
+    /* run inflate() on input until output buffer not full */
+    do {
+      strm.avail_out = CHUNK;
+      strm.next_out = out;
+      ret = inflate(&strm, Z_NO_FLUSH);
+      assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+      switch (ret) {
+      case Z_NEED_DICT:
+          ret = Z_DATA_ERROR;     /* and fall through */
+      case Z_DATA_ERROR:
+      case Z_MEM_ERROR:
+          (void)inflateEnd(&strm);
+          goto err;
+      }
+
+      have = CHUNK - strm.avail_out;
+      bytes->bytes = realloc(bytes->bytes, (bytes->len)+have);
+      memcpy((bytes->bytes)+(bytes->len), out, have);
+      bytes->len += have;
+    } while (strm.avail_out == 0);
+    /* done when inflate() says it’s done */
+  } while (ret != Z_STREAM_END);
+
+  /* clean up and return */
+  (void)inflateEnd(&strm);
+  if (ret == Z_STREAM_END) {
+    bytes->bytes = realloc(bytes->bytes, (bytes->len)+1);
+    bytes->bytes[bytes->len] = '\0';
+    res.which = ZRES_OK;
+    res.out = bytes;
+    return res;
+  }
+
+  /* we didn’t succeed, we fail */
+  ret = Z_DATA_ERROR;
+err:
+  res.which = ZRES_ERR;
+  res.err = ret;
+  if (bytes->bytes) free(bytes->bytes);
+  free(bytes);
+  return res;
+}

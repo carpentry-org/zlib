@@ -2,7 +2,14 @@
 
 (load "zlib.carp")
 
+(relative-include "zlib_test_helper.h")
+
 (use-all ZLib Test)
+
+; length-aware file I/O (see zlib_test_helper.h) so the interop tests can move
+; gzip streams, which contain NUL bytes, through the filesystem intact.
+(register write-gz-file (Fn [&String ZLib.ZBytes] Int) "ZLibTest_write_file")
+(register read-gz-file (Fn [&String] ZLib.ZBytes) "ZLibTest_read_file")
 
 (defn from-success [r]
   (match r (Result.Success s) s (Result.Error _) (ZBytes.init 0 @"")))
@@ -60,4 +67,68 @@
   (assert-equal test
     &(Result.Success (boundary-input 32768))
     &(inflate (from-success (deflate &(boundary-input 32768))))
-    "round-trip preserves the final byte at 2*CHUNK+1 bytes (32769)"))
+    "round-trip preserves the final byte at 2*CHUNK+1 bytes (32769)")
+  ; --- gzip / gunzip (gzip container format) ---
+  (assert-true test (Result.success? &(gzip "hi")) "gzip returns success")
+  (assert-equal test
+    &(Result.Success @"hi")
+    &(gunzip (from-success (gzip "hi")))
+    "gzip->gunzip round-trip is exact")
+  (assert-equal test
+    &(Result.Success @"")
+    &(gunzip (from-success (gzip "")))
+    "gzip->gunzip round-trip of the empty string")
+  (assert-equal test
+    &(Result.Success
+      @"the quick brown fox jumps over the lazy dog, again and again and again")
+    &(gunzip
+      (from-success
+        (gzip
+          "the quick brown fox jumps over the lazy dog, again and again and again")))
+    "gzip->gunzip round-trip with larger input")
+  (assert-equal test
+    &(Result.Success (boundary-input 16384))
+    &(gunzip (from-success (gzip &(boundary-input 16384))))
+    "gzip->gunzip round-trip past CHUNK at 16385 bytes")
+  (assert-equal test
+    &(Result.Success (boundary-input 32768))
+    &(gunzip (from-success (gzip &(boundary-input 32768))))
+    "gzip->gunzip round-trip past CHUNK at 32769 bytes")
+  (assert-equal test
+    &(Result.Success @"hi")
+    &(gunzip (from-success (gzip-with "hi" (ZLevel.BestCompression))))
+    "gzip-with BestCompression round-trip")
+  (assert-equal test
+    &(Result.Error @"Data Error")
+    &(gunzip (ZBytes.init 3 @"hi"))
+    "gunzipping non-gzip data returns data error")
+  ; gzip streams start with the two-byte magic number 0x1f 0x8b (RFC 1952).
+  (let-do [gz (from-success (gzip "the quick brown fox"))
+           magic (String.to-bytes (ZBytes.bytes &gz))]
+    (assert-true test
+      (and (Int.>= (Array.length &magic) 2)
+           (= 31b @(Array.unsafe-nth &magic 0))
+           (= 139b @(Array.unsafe-nth &magic 1)))
+      "gzip output begins with the gzip magic bytes 0x1f 0x8b"))
+  ; interop: the system gunzip decompresses what Carp's gzip produced.
+  (let-do [gzp @"/tmp/carp-zlib-test-a.gz"
+           outp @"/tmp/carp-zlib-test-a.out"]
+    (ignore (write-gz-file &gzp (from-success (gzip "hello, gzip interop!"))))
+    (ignore (System.system &(fmt "gunzip -c '%s' > '%s'" &gzp &outp)))
+    (let-do [got (IO.read-file &outp)]
+      (ignore (System.system &(fmt "rm -f '%s' '%s'" &gzp &outp)))
+      (assert-equal test
+        &(Result.Success @"hello, gzip interop!")
+        &got
+        "system gunzip decompresses Carp gzip output")))
+  ; interop: Carp's gunzip decodes a .gz produced by the system gzip.
+  (let-do [gzp @"/tmp/carp-zlib-test-b.gz"]
+    (ignore
+      (System.system
+        &(fmt "printf '%%s' 'hello from system gzip' | gzip -c > '%s'" &gzp)))
+    (let-do [got (gunzip (read-gz-file &gzp))]
+      (ignore (System.system &(fmt "rm -f '%s'" &gzp)))
+      (assert-equal test
+        &(Result.Success @"hello from system gzip")
+        &got
+        "gunzip decodes a .gz produced by the system gzip"))))

@@ -46,9 +46,11 @@
 <pre><code class="language-clojure">(load &quot;git@git.veitheller.de:carpentry/zlib.git@0.0.3&quot;)
 </code></pre>
 <h2>Usage</h2>
-<p>The <code>ZLib</code> module provides only two functions, <a href="#inflate"><code>inflate</code></a> and
-<a href="#deflate"><code>deflate</code></a>. These functions work in tandem to provide you with data
-compression.</p>
+<p>The <code>ZLib</code> module provides <a href="#inflate"><code>inflate</code></a> and <a href="#deflate"><code>deflate</code></a>,
+which work in tandem to provide you with data compression using the raw zlib
+stream format. For the gzip container format (RFC 1952) used by <code>.gz</code> files and
+HTTP <code>Content-Encoding: gzip</code>, use <a href="#gzip"><code>gzip</code></a> and <a href="#gunzip"><code>gunzip</code></a>
+instead.</p>
 <pre><code class="language-clojure">; deflate returns a Result of either binary data or an error message
 (let [deflated (ZLib.deflate &quot;mystring&quot;)]
   (match deflated
@@ -137,6 +139,78 @@ well, and an <code>Error</code> returning an error message otherwise.</p>
 a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#gunzip">
+                        <h3 id="gunzip">
+                            gunzip
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [ZLib.ZBytes] (Result String String))
+                    </p>
+                    <pre class="args">
+                        (gunzip s)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a gzip-framed bytes object <code>s</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the decompressed string if all goes
+well, and an <code>Error</code> returning an error message otherwise. It is the inverse of
+<a href="#gzip"><code>gzip</code></a> and also decodes <code>.gz</code> streams produced by other tools.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#gzip">
+                        <h3 id="gzip">
+                            gzip
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref String a)] (Result ZLib.ZBytes String))
+                    </p>
+                    <pre class="args">
+                        (gzip s)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the gzip-framed bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+<p>It is equivalent to calling <a href="#gzip-with"><code>gzip-with</code></a> with
+<code>(ZLevel.DefaultCompression)</code>.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#gzip-with">
+                        <h3 id="gzip-with">
+                            gzip-with
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref String a), ZLib.ZLevel] (Result ZLib.ZBytes String))
+                    </p>
+                    <pre class="args">
+                        (gzip-with s level)
+                    </pre>
+                    <p class="doc">
+                        <p>takes a bytes object <code>s</code>, a <code>ZLevel</code> <code>level</code> and returns a
+<code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the gzip-framed bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise. Unlike
+<a href="#deflate-with"><code>deflate-with</code></a>, the output is in the gzip container format
+(RFC 1952) understood by <code>.gz</code> files and HTTP <code>Content-Encoding: gzip</code>.</p>
 
                     </p>
                 </div>

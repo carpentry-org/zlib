@@ -11,9 +11,11 @@
 
 ## Usage
 
-The `ZLib` module provides only two functions, [`inflate`](#inflate) and
-[`deflate`](#deflate). These functions work in tandem to provide you with data
-compression.
+The `ZLib` module provides [`inflate`](#inflate) and [`deflate`](#deflate),
+which work in tandem to provide you with data compression using the raw zlib
+stream format. For the gzip container format (RFC 1952) used by `.gz` files and
+HTTP `Content-Encoding: gzip`, use [`gzip`](#gzip) and [`gunzip`](#gunzip)
+instead.
 
 ```clojure
 ; deflate returns a Result of either binary data or an error message
@@ -103,4 +105,43 @@ well, and an `Error` returning an error message otherwise.
 
 It is equivalent to calling [`deflate-with`](#deflate-with) with
 `(ZLevel.DefaultCompression)`.")
-  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression))))
+  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression)))
+
+  (private gzip-)
+  (hidden gzip-)
+  (register gzip- (Fn [&String Int] ZRes) "ZLib_gzip_c")
+  (doc gzip-with "takes a bytes object `s`, a `ZLevel` `level` and returns a
+`Result`.
+
+The `Result` will be a `Success` containing the gzip-framed bytes if all goes
+well, and an `Error` returning an error message otherwise. Unlike
+[`deflate-with`](#deflate-with), the output is in the gzip container format
+(RFC 1952) understood by `.gz` files and HTTP `Content-Encoding: gzip`.")
+  (defn gzip-with [s level]
+    (let [r (gzip- s (ZLevel.to-int level))]
+      (if (ZRes.ok? &r)
+        (Result.Success (ZRes.bytes r))
+        (Result.Error (ZRes.err r)))))
+
+  (doc gzip "takes a bytes object `s` and returns a `Result`.
+
+The `Result` will be a `Success` containing the gzip-framed bytes if all goes
+well, and an `Error` returning an error message otherwise.
+
+It is equivalent to calling [`gzip-with`](#gzip-with) with
+`(ZLevel.DefaultCompression)`.")
+  (defn gzip [s] (gzip-with s (ZLevel.DefaultCompression)))
+
+  (private gunzip-)
+  (hidden gunzip-)
+  (register gunzip- (Fn [ZLib.ZBytes] ZRes) "ZLib_gunzip_c")
+  (doc gunzip "takes a gzip-framed bytes object `s` and returns a `Result`.
+
+The `Result` will be a `Success` containing the decompressed string if all goes
+well, and an `Error` returning an error message otherwise. It is the inverse of
+[`gzip`](#gzip) and also decodes `.gz` streams produced by other tools.")
+  (defn gunzip [s]
+    (let [r (gunzip- s)]
+      (if (ZRes.ok? &r)
+        (Result.Success (ZRes.str r))
+        (Result.Error (ZRes.err r))))))
