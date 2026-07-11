@@ -159,7 +159,7 @@ ZRes ZLib_deflate_c(String* s, int level) {
   /* compress until end of file */
   do {
     strm.avail_in = min(CHUNK, len-offs);
-    if (strm.avail_in <= 0) break;
+    /* no early break: empty input must still run one Z_FINISH pass */
     memcpy(in, (*s)+offs, strm.avail_in);
     offs += strm.avail_in;
     flush = offs >= len ? Z_FINISH : Z_NO_FLUSH;

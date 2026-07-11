@@ -50,6 +50,15 @@
         (deflate
           "the quick brown fox jumps over the lazy dog, again and again and again")))
     "round-trip with larger input")
+  ; regression: deflating the empty string used to abort, because the compress
+  ; loop broke on zero input before the mandatory Z_FINISH pass.
+  (assert-true test
+    (Result.success? &(deflate ""))
+    "deflating the empty string returns success")
+  (assert-equal test
+    &(Result.Success @"")
+    &(inflate (from-success (deflate "")))
+    "empty-string deflate->inflate round-trip is exact")
   ; regression: an input whose length is an exact multiple of CHUNK (16384)
   ; plus one used to drop its final byte, because the deflate loop signalled
   ; Z_FINISH one byte early and exited before feeding the last byte.
