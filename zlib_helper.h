@@ -23,7 +23,9 @@ bool ZRes_is_ok(ZRes* r) {
 
 ZLibZBytes ZRes_bytes(ZRes r) {
   assert(r.which == ZRES_OK);
-  return *r.out;
+  ZLibZBytes res = *r.out;
+  free(r.out);
+  return res;
 }
 
 String ZRes_str(ZRes r) {
