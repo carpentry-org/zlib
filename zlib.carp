@@ -41,6 +41,11 @@ default.")
   (register-type ZBytes [len Int
                          bytes String])
   (hidden ZBytes)
+  (defmodule ZBytes
+    (register delete (Fn [ZLib.ZBytes] ()))
+    (implements delete ZLib.ZBytes.delete)
+    (register copy (Fn [&ZLib.ZBytes] ZLib.ZBytes))
+    (implements copy ZLib.ZBytes.copy))
 
   (register-type ZRes)
   (defmodule ZRes

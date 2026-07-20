@@ -7,6 +7,21 @@ typedef struct {
   char* bytes;
 } ZLibZBytes;
 
+void ZLib_ZBytes_delete(ZLibZBytes b) {
+  if (b.bytes) free(b.bytes);
+}
+
+// the payload is binary and not NUL-terminated, so this has to go by `len`;
+// anything strlen-based would read past the end of the buffer.
+ZLibZBytes ZLib_ZBytes_copy(ZLibZBytes* b) {
+  ZLibZBytes res;
+  res.len = b->len;
+  res.bytes = malloc((b->len)+1);
+  memcpy(res.bytes, b->bytes, b->len);
+  res.bytes[b->len] = '\0';
+  return res;
+}
+
 typedef struct {
   int which;
   union {
@@ -125,6 +140,8 @@ ZRes ZLib_inflate_c(ZLibZBytes b) {
     bytes->bytes[bytes->len] = '\0';
     res.which = ZRES_OK;
     res.out = bytes;
+    /* `b` is moved into this function, so freeing its payload is our job */
+    if (b.bytes) free(b.bytes);
     return res;
   }
 
@@ -135,6 +152,7 @@ err:
   res.err = ret;
   if (bytes->bytes) free(bytes->bytes);
   free(bytes);
+  if (b.bytes) free(b.bytes);
   return res;
 }
 

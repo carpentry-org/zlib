@@ -69,4 +69,11 @@
   (assert-equal test
     &(Result.Success (boundary-input 32768))
     &(inflate (from-success (deflate &(boundary-input 32768))))
-    "round-trip preserves the final byte at 2*CHUNK+1 bytes (32769)"))
+    "round-trip preserves the final byte at 2*CHUNK+1 bytes (32769)")
+  ; copying has to go by `len`: the payload is binary and contains NUL bytes,
+  ; so a strlen-based copy would truncate it.
+  (let-do [orig (from-success (deflate &(boundary-input 16384)))]
+    (assert-equal test
+      &(Result.Success (boundary-input 16384))
+      &(inflate @&orig)
+      "round-trip through a copied ZBytes preserves the whole payload")))
