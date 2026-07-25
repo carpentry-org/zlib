@@ -6,7 +6,7 @@
 ## Installation
 
 ```clojure
-(load \"git@git.veitheller.de:carpentry/zlib.git@0.0.4\")
+(load \"git@git.veitheller.de:carpentry/zlib.git@0.0.5\")
 ```
 
 ## Usage
