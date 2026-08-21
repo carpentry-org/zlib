@@ -22,6 +22,22 @@ ZLibZBytes ZLib_ZBytes_copy(ZLibZBytes* b) {
   return res;
 }
 
+/* both conversions are moves: the argument’s buffer becomes the result’s */
+ZLibZBytes ZLib_ZBytes_from_bytes(Array a) {
+  ZLibZBytes res;
+  res.len = a.len;
+  res.bytes = a.data;
+  return res;
+}
+
+Array ZLib_ZBytes_to_bytes(ZLibZBytes b) {
+  Array res;
+  res.len = b.len;
+  res.capacity = b.len;
+  res.data = b.bytes;
+  return res;
+}
+
 typedef struct {
   int which;
   union {
@@ -80,7 +96,7 @@ char* ZRes_err(ZRes r) {
      __typeof__ (b) _b = (b); \
    _a < _b ? _a : _b; })
 
-ZRes ZLib_inflate_c(ZLibZBytes b) {
+static ZRes ZLib_inflate_buf(const char* source, int len) {
   int ret;
   ZRes res;
   unsigned have;
@@ -88,8 +104,6 @@ ZRes ZLib_inflate_c(ZLibZBytes b) {
   unsigned char in[CHUNK];
   unsigned char out[CHUNK];
   int offs = 0;
-  int len = b.len;
-  char* source = b.bytes;
   ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
   bytes->bytes = NULL;
   bytes->len = 0;
@@ -140,8 +154,6 @@ ZRes ZLib_inflate_c(ZLibZBytes b) {
     bytes->bytes[bytes->len] = '\0';
     res.which = ZRES_OK;
     res.out = bytes;
-    /* `b` is moved into this function, so freeing its payload is our job */
-    if (b.bytes) free(b.bytes);
     return res;
   }
 
@@ -152,11 +164,10 @@ err:
   res.err = ret;
   if (bytes->bytes) free(bytes->bytes);
   free(bytes);
-  if (b.bytes) free(b.bytes);
   return res;
 }
 
-ZRes ZLib_deflate_c(String* s, int level) {
+static ZRes ZLib_deflate_buf(const char* source, int len, int level) {
   int ret, flush;
   unsigned have;
   z_stream strm;
@@ -164,7 +175,6 @@ ZRes ZLib_deflate_c(String* s, int level) {
   unsigned char in[CHUNK];
   unsigned char out[CHUNK];
   int offs = 0;
-  int len = strlen(*s);
   ZLibZBytes* bytes = malloc(sizeof(ZLibZBytes));
   bytes->bytes = NULL;
   bytes->len = 0;
@@ -180,7 +190,7 @@ ZRes ZLib_deflate_c(String* s, int level) {
   do {
     strm.avail_in = min(CHUNK, len-offs);
     /* no early break: empty input must still run one Z_FINISH pass */
-    memcpy(in, (*s)+offs, strm.avail_in);
+    memcpy(in, source+offs, strm.avail_in);
     offs += strm.avail_in;
     flush = offs >= len ? Z_FINISH : Z_NO_FLUSH;
     strm.next_in = in;
@@ -214,4 +224,19 @@ err:
   if (bytes->bytes) free(bytes->bytes);
   free(bytes);
   return res;
+}
+
+ZRes ZLib_inflate_c(ZLibZBytes b) {
+  ZRes res = ZLib_inflate_buf(b.bytes, b.len);
+  /* `b` is moved into this function, so freeing its payload is our job */
+  if (b.bytes) free(b.bytes);
+  return res;
+}
+
+ZRes ZLib_deflate_c(String* s, int level) {
+  return ZLib_deflate_buf(*s, strlen(*s), level);
+}
+
+ZRes ZLib_deflate_bytes_c(Array* a, int level) {
+  return ZLib_deflate_buf((const char*)a->data, a->len, level);
 }
