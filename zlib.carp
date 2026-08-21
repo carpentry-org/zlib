@@ -11,9 +11,10 @@
 
 ## Usage
 
-The `ZLib` module provides only two functions, [`inflate`](#inflate) and
-[`deflate`](#deflate). These functions work in tandem to provide you with data
-compression.
+The `ZLib` module provides two pairs of functions: [`deflate`](#deflate) and
+[`inflate`](#inflate) for strings, and [`deflate-bytes`](#deflate-bytes) and
+[`inflate-bytes`](#inflate-bytes) for binary data. Each pair works in tandem to
+provide you with data compression.
 
 ```clojure
 ; deflate returns a Result of either binary data or an error message
@@ -33,10 +34,27 @@ Because it’s a `Result` type, we can apply combinators to it.
 )
 ```
 
-You can also choose different levels of compression using `inflate-with`. The
+You can also choose different levels of compression using `deflate-with`. The
 levels are defined in [`ZLib.ZLevel`](#ZLevel), and are `NoCompression`,
 `BestSpeed`, `BestCompression`, and `DefaultCompression`, which is, well, the
-default.")
+default.
+
+## Binary data
+
+`deflate` and `inflate` are bounded by `String` semantics: their input stops at
+the first NUL byte, and the compressed payload they pass around is opaque.
+Compressed data is full of NUL bytes, so if you want to write it to a file or
+send it over a socket—or if what you are compressing isn’t text in the first
+place—use the `(Array Byte)` API instead.
+
+```clojure
+(=> (ZLib.deflate-bytes &(String.to-bytes \"mystring\"))
+    (Result.and-then &ZLib.inflate-bytes))
+```
+
+It offers the same three entry points, [`deflate-bytes`](#deflate-bytes),
+[`deflate-bytes-with`](#deflate-bytes-with), and
+[`inflate-bytes`](#inflate-bytes), all of which take and return `(Array Byte)`.")
 (defmodule ZLib
   (register-type ZBytes [len Int
                          bytes String])
@@ -45,7 +63,11 @@ default.")
     (register delete (Fn [ZLib.ZBytes] ()))
     (implements delete ZLib.ZBytes.delete)
     (register copy (Fn [&ZLib.ZBytes] ZLib.ZBytes))
-    (implements copy ZLib.ZBytes.copy))
+    (implements copy ZLib.ZBytes.copy)
+    (register from-bytes
+      (Fn [(Array Byte)] ZLib.ZBytes)
+      "ZLib_ZBytes_from_bytes")
+    (register to-bytes (Fn [ZLib.ZBytes] (Array Byte)) "ZLib_ZBytes_to_bytes"))
 
   (register-type ZRes)
   (defmodule ZRes
@@ -74,6 +96,13 @@ default.")
 The constructors are `NoCompression`, `BestSpeed`, `BestCompression`, and
 `DefaultCompression`, which is, well, the default.")
 
+  (private byte-result)
+  (hidden byte-result)
+  (defn byte-result [r]
+    (if (ZRes.ok? &r)
+      (Result.Success (ZBytes.to-bytes (ZRes.bytes r)))
+      (Result.Error (ZRes.err r))))
+
   (private inflate-)
   (hidden inflate-)
   (register inflate- (Fn [ZLib.ZBytes] ZRes) "ZLib_inflate_c")
@@ -87,11 +116,20 @@ well, and an `Error` returning an error message otherwise.")
         (Result.Success (ZRes.str r))
         (Result.Error (ZRes.err r)))))
 
+  (doc inflate-bytes "takes compressed bytes `b` and returns a `Result`.
+
+The `Result` will be a `Success` containing the inflated bytes if all goes
+well, and an `Error` returning an error message otherwise.
+
+Unlike [`inflate`](#inflate), it can decompress payloads that contain NUL
+bytes.")
+  (defn inflate-bytes [b] (byte-result (inflate- (ZBytes.from-bytes b))))
+
   (private deflate-)
   (hidden deflate-)
   (register deflate- (Fn [&String Int] ZRes) "ZLib_deflate_c")
-  (doc deflate-with "takes a bytes object `s`, a `Zlevel` `level` and returns
-a `Result`.
+  (doc deflate-with "takes a string `s`, a `ZLevel` `level` and returns a
+`Result`.
 
 The `Result` will be a `Success` containing the deflated bytes if all goes
 well, and an `Error` returning an error message otherwise.")
@@ -101,11 +139,34 @@ well, and an `Error` returning an error message otherwise.")
         (Result.Success (ZRes.bytes r))
         (Result.Error (ZRes.err r)))))
 
-  (doc deflate "takes a bytes object `s` and returns a `Result`.
+  (doc deflate "takes a string `s` and returns a `Result`.
 
 The `Result` will be a `Success` containing the deflated bytes if all goes
 well, and an `Error` returning an error message otherwise.
 
 It is equivalent to calling [`deflate-with`](#deflate-with) with
 `(ZLevel.DefaultCompression)`.")
-  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression))))
+  (defn deflate [s] (deflate-with s (ZLevel.DefaultCompression)))
+
+  (private deflate-bytes-)
+  (hidden deflate-bytes-)
+  (register deflate-bytes- (Fn [&(Array Byte) Int] ZRes) "ZLib_deflate_bytes_c")
+  (doc deflate-bytes-with "takes bytes `b`, a `ZLevel` `level` and returns a
+`Result`.
+
+The `Result` will be a `Success` containing the deflated bytes if all goes
+well, and an `Error` returning an error message otherwise.
+
+Unlike [`deflate-with`](#deflate-with), it compresses all of `b`, NUL bytes
+included, and hands you the compressed bytes.")
+  (defn deflate-bytes-with [b level]
+    (byte-result (deflate-bytes- b (ZLevel.to-int level))))
+
+  (doc deflate-bytes "takes bytes `b` and returns a `Result`.
+
+The `Result` will be a `Success` containing the deflated bytes if all goes
+well, and an `Error` returning an error message otherwise.
+
+It is equivalent to calling [`deflate-bytes-with`](#deflate-bytes-with) with
+`(ZLevel.DefaultCompression)`.")
+  (defn deflate-bytes [b] (deflate-bytes-with b (ZLevel.DefaultCompression))))

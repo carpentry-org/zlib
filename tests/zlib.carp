@@ -7,9 +7,18 @@
 (defn from-success [r]
   (match r (Result.Success s) s (Result.Error _) (ZBytes.init 0 @"")))
 
+(defn ok-bytes [r] (match r (Result.Success s) s (Result.Error _) []))
+
 ; a string of `n` copies of "a" followed by a distinct trailing "b", so the
 ; total length is `n+1` and the final byte is unmistakable in a round-trip.
 (defn boundary-input [n] (String.append &(String.repeat n "a") "b"))
+
+; the same shape, but the trailing byte is a NUL, which no String can carry.
+(defn boundary-bytes [n] (Array.push-back (Array.replicate n &97b) 0b))
+
+(defn all-byte-values [] (Array.repeat-indexed 256 (fn [i] (Byte.from-int i))))
+
+(defn has-nul? [b] (Array.any? &(fn [x] (Byte.= @x 0b)) b))
 
 (deftest test
   (assert-true test
@@ -76,4 +85,87 @@
     (assert-equal test
       &(Result.Success (boundary-input 16384))
       &(inflate @&orig)
-      "round-trip through a copied ZBytes preserves the whole payload")))
+      "round-trip through a copied ZBytes preserves the whole payload"))
+
+  (assert-true test
+    (Result.success? &(deflate-bytes &(String.to-bytes "hi")))
+    "byte deflation returns success")
+  (assert-equal test
+    &(Result.Success (String.to-bytes "hi"))
+    &(inflate-bytes (ok-bytes (deflate-bytes &(String.to-bytes "hi"))))
+    "byte round-trip is exact")
+  (assert-equal test
+    &(Result.Success (the (Array Byte) [104b 0b 105b]))
+    &(inflate-bytes
+      (ok-bytes (deflate-bytes &(the (Array Byte) [104b 0b 105b]))))
+    "byte round-trip preserves an interior NUL")
+  (assert-equal test
+    &(Result.Success (the (Array Byte) [0b 104b 105b 0b]))
+    &(inflate-bytes
+      (ok-bytes (deflate-bytes &(the (Array Byte) [0b 104b 105b 0b]))))
+    "byte round-trip preserves NULs at both ends")
+  (assert-equal test
+    &(Result.Success (all-byte-values))
+    &(inflate-bytes (ok-bytes (deflate-bytes &(all-byte-values))))
+    "byte round-trip preserves all 256 byte values")
+  (assert-true test
+    (Result.success? &(deflate-bytes &(the (Array Byte) [])))
+    "deflating an empty byte array returns success")
+  (assert-equal test
+    &(Result.Success (the (Array Byte) []))
+    &(inflate-bytes (ok-bytes (deflate-bytes &(the (Array Byte) []))))
+    "empty byte round-trip is exact")
+  (assert-equal test
+    &(Result.Success (boundary-bytes 16384))
+    &(inflate-bytes (ok-bytes (deflate-bytes &(boundary-bytes 16384))))
+    "byte round-trip preserves a trailing NUL at CHUNK+1 bytes (16385)")
+  (assert-equal test
+    &(Result.Success (boundary-bytes 32768))
+    &(inflate-bytes (ok-bytes (deflate-bytes &(boundary-bytes 32768))))
+    "byte round-trip preserves a trailing NUL at 2*CHUNK+1 bytes (32769)")
+  (assert-equal test
+    &(Result.Error @"Data Error")
+    &(inflate-bytes (the (Array Byte) [104b 105b 106b]))
+    "inflating random bytes returns data error")
+  (assert-equal test
+    &(Result.Success (all-byte-values))
+    &(inflate-bytes
+      (ok-bytes (deflate-bytes-with &(all-byte-values) (ZLevel.NoCompression))))
+    "byte round-trip with NoCompression")
+  (assert-equal test
+    &(Result.Success (all-byte-values))
+    &(inflate-bytes
+      (ok-bytes (deflate-bytes-with &(all-byte-values) (ZLevel.BestSpeed))))
+    "byte round-trip with BestSpeed")
+  (assert-equal test
+    &(Result.Success (all-byte-values))
+    &(inflate-bytes
+      (ok-bytes (deflate-bytes-with &(all-byte-values) (ZLevel.BestCompression))))
+    "byte round-trip with BestCompression")
+  (assert-equal test
+    &(Result.Success (all-byte-values))
+    &(inflate-bytes
+      (ok-bytes
+        (deflate-bytes-with &(all-byte-values) (ZLevel.DefaultCompression))))
+    "byte round-trip with DefaultCompression")
+  (assert-true test
+    (has-nul? &(ok-bytes (deflate-bytes &(all-byte-values))))
+    "compressed bytes contain NULs a String could not carry")
+  (assert-equal test
+    &(ZBytes.to-bytes (from-success (deflate "hi")))
+    &(ok-bytes (deflate-bytes &(String.to-bytes "hi")))
+    "both paths produce the same compressed bytes")
+  (assert-equal test
+    &(Result.Success @"hi")
+    &(inflate
+      (ZBytes.from-bytes (ok-bytes (deflate-bytes &(String.to-bytes "hi")))))
+    "compressed bytes inflate through the String API")
+  (assert-equal test
+    &(Result.Success (String.to-bytes "hi"))
+    &(inflate-bytes (ZBytes.to-bytes (from-success (deflate "hi"))))
+    "compressed ZBytes inflate through the byte API")
+  (let-do [nully (the (Array Byte) [104b 0b 105b])]
+    (assert-equal test
+      &(Result.Success @"h")
+      &(inflate (from-success (deflate &(String.from-bytes &nully))))
+      "deflating a String still truncates at the first NUL")))

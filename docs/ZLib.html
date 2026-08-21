@@ -46,9 +46,10 @@
 <pre><code class="language-clojure">(load &quot;git@git.veitheller.de:carpentry/zlib.git@0.0.5&quot;)
 </code></pre>
 <h2>Usage</h2>
-<p>The <code>ZLib</code> module provides only two functions, <a href="#inflate"><code>inflate</code></a> and
-<a href="#deflate"><code>deflate</code></a>. These functions work in tandem to provide you with data
-compression.</p>
+<p>The <code>ZLib</code> module provides two pairs of functions: <a href="#deflate"><code>deflate</code></a> and
+<a href="#inflate"><code>inflate</code></a> for strings, and <a href="#deflate-bytes"><code>deflate-bytes</code></a> and
+<a href="#inflate-bytes"><code>inflate-bytes</code></a> for binary data. Each pair works in tandem to
+provide you with data compression.</p>
 <pre><code class="language-clojure">; deflate returns a Result of either binary data or an error message
 (let [deflated (ZLib.deflate &quot;mystring&quot;)]
   (match deflated
@@ -62,10 +63,22 @@ compression.</p>
     (Result.map-error &amp;(fn [msg] (do (println* &amp;msg) msg)))
 )
 </code></pre>
-<p>You can also choose different levels of compression using <code>inflate-with</code>. The
+<p>You can also choose different levels of compression using <code>deflate-with</code>. The
 levels are defined in <a href="#ZLevel"><code>ZLib.ZLevel</code></a>, and are <code>NoCompression</code>,
 <code>BestSpeed</code>, <code>BestCompression</code>, and <code>DefaultCompression</code>, which is, well, the
 default.</p>
+<h2>Binary data</h2>
+<p><code>deflate</code> and <code>inflate</code> are bounded by <code>String</code> semantics: their input stops at
+the first NUL byte, and the compressed payload they pass around is opaque.
+Compressed data is full of NUL bytes, so if you want to write it to a file or
+send it over a socket—or if what you are compressing isn’t text in the first
+place—use the <code>(Array Byte)</code> API instead.</p>
+<pre><code class="language-clojure">(=&gt; (ZLib.deflate-bytes &amp;(String.to-bytes &quot;mystring&quot;))
+    (Result.and-then &amp;ZLib.inflate-bytes))
+</code></pre>
+<p>It offers the same three entry points, <a href="#deflate-bytes"><code>deflate-bytes</code></a>,
+<a href="#deflate-bytes-with"><code>deflate-bytes-with</code></a>, and
+<a href="#inflate-bytes"><code>inflate-bytes</code></a>, all of which take and return <code>(Array Byte)</code>.</p>
 
                 </div>
                 <div class="binder">
@@ -109,11 +122,60 @@ default.</p>
                         (deflate s)
                     </pre>
                     <p class="doc">
-                        <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
+                        <p>takes a string <code>s</code> and returns a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
 <p>It is equivalent to calling <a href="#deflate-with"><code>deflate-with</code></a> with
 <code>(ZLevel.DefaultCompression)</code>.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#deflate-bytes">
+                        <h3 id="deflate-bytes">
+                            deflate-bytes
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref (Array Byte) a)] (Result (Array Byte) String))
+                    </p>
+                    <pre class="args">
+                        (deflate-bytes b)
+                    </pre>
+                    <p class="doc">
+                        <p>takes bytes <code>b</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+<p>It is equivalent to calling <a href="#deflate-bytes-with"><code>deflate-bytes-with</code></a> with
+<code>(ZLevel.DefaultCompression)</code>.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#deflate-bytes-with">
+                        <h3 id="deflate-bytes-with">
+                            deflate-bytes-with
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref (Array Byte) a), ZLib.ZLevel] (Result (Array Byte) String))
+                    </p>
+                    <pre class="args">
+                        (deflate-bytes-with b level)
+                    </pre>
+                    <p class="doc">
+                        <p>takes bytes <code>b</code>, a <code>ZLevel</code> <code>level</code> and returns a
+<code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+<p>Unlike <a href="#deflate-with"><code>deflate-with</code></a>, it compresses all of <code>b</code>, NUL bytes
+included, and hands you the compressed bytes.</p>
 
                     </p>
                 </div>
@@ -133,8 +195,8 @@ well, and an <code>Error</code> returning an error message otherwise.</p>
                         (deflate-with s level)
                     </pre>
                     <p class="doc">
-                        <p>takes a bytes object <code>s</code>, a <code>Zlevel</code> <code>level</code> and returns
-a <code>Result</code>.</p>
+                        <p>takes a string <code>s</code>, a <code>ZLevel</code> <code>level</code> and returns a
+<code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the deflated bytes if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
 
@@ -159,6 +221,30 @@ well, and an <code>Error</code> returning an error message otherwise.</p>
                         <p>takes a bytes object <code>s</code> and returns a <code>Result</code>.</p>
 <p>The <code>Result</code> will be a <code>Success</code> containing the inflated string if all goes
 well, and an <code>Error</code> returning an error message otherwise.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#inflate-bytes">
+                        <h3 id="inflate-bytes">
+                            inflate-bytes
+                        </h3>
+                    </a>
+                    <div class="description">
+                        defn
+                    </div>
+                    <p class="sig">
+                        (Fn [(Array Byte)] (Result (Array Byte) String))
+                    </p>
+                    <pre class="args">
+                        (inflate-bytes b)
+                    </pre>
+                    <p class="doc">
+                        <p>takes compressed bytes <code>b</code> and returns a <code>Result</code>.</p>
+<p>The <code>Result</code> will be a <code>Success</code> containing the inflated bytes if all goes
+well, and an <code>Error</code> returning an error message otherwise.</p>
+<p>Unlike <a href="#inflate"><code>inflate</code></a>, it can decompress payloads that contain NUL
+bytes.</p>
 
                     </p>
                 </div>
